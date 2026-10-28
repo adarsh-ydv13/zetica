@@ -1,11 +1,14 @@
 import dotenv from "dotenv";
-
-
 import app from "./src/app.js"
-import { testAi } from "./src/services/ai.services.js"
 import connectDB from "./src/config/database.js"
+import http from "http"
+import { initSocket } from "./src/sockets/server.socket.js";
 
 dotenv.config();
+
+const httpServer=http.createServer(app)
+
+initSocket(httpServer)
 
 async function startServer() {
   try {
@@ -14,10 +17,10 @@ async function startServer() {
     }
 
     await connectDB();
-    app.listen(3000, () => {
+    httpServer.listen(3000, () => {
       console.log("Server is running on port 3000");
     });
-    testAi();
+    // testAi();
   } catch (error) {
     console.error("Database connection failed:", error.message);
     process.exit(1);
