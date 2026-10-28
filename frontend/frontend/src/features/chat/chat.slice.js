@@ -1,44 +1,71 @@
- import {createSlice} from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
+const chatSlice = createSlice({
+    name: "chat",
 
- const chatslice=createSlice({
-    name: 'chat',
-    initialState:{
-        chats:{},
-        currentChatId:null,
-        isLoading:false,
-        error:null,
+    initialState: {
+        chats: {},
+        currentChatId: null,
+        isLoading: false,
+        error: null,
     },
-    reducers:{
-        createNewChat:(state,action)=>{
-       const {chatId,title}=action.payload
-       state.chats[chatId]={
-        id:chatId,
-        title,
-        messages:[],
-        lastUpdated:new Date().toISOString(),
-       }
+
+    reducers: {
+        createNewChat: (state, action) => {
+            const { chatId, title } = action.payload;
+
+            if (!state.chats[chatId]) {
+                state.chats[chatId] = {
+                    id: chatId,
+                    title,
+                    messages: [],
+                    lastUpdated: new Date().toISOString(),
+                };
+            }
         },
 
-        addNewMessage:(state,action)=>{
-            const {chatId,message}=action.payload
-            state.chats[chatId].messages.push({content,role})
-        },
-        setChats:(state,action)=>{
-            state.chats=action.payload
-        },
-        setCurrentChatId:(state,action)=>{
-            state.currentChatId=action.payload
-        },
-        setLoading:(state,action)=>{
-            state.isLoading=action.payload
-        },
-        setError:(state,action)=>{
-            state.error=action.payload
-        }
-    }
- })
+        addNewMessage: (state, action) => {
+            const { chatId, content, role } = action.payload;
 
+            // Chat exist nahi karta toh message add nahi kar sakte.
+            if (!state.chats[chatId]) {
+                return;
+            }
 
- export const {setChats,setCurrentChatId,setLoading,setError,createNewChat,addNewMessage}=chatslice.actions
- export default chatslice.reducer
+            state.chats[chatId].messages.push({
+                id: crypto.randomUUID(),
+                content,
+                role,
+            });
+
+            state.chats[chatId].lastUpdated = new Date().toISOString();
+        },
+
+        setChats: (state, action) => {
+            state.chats = action.payload;
+        },
+
+        setCurrentChatId: (state, action) => {
+            state.currentChatId = action.payload;
+        },
+
+        setLoading: (state, action) => {
+            state.isLoading = action.payload;
+        },
+
+        setError: (state, action) => {
+            state.error = action.payload;
+        },
+    },
+});
+
+export const {
+    setChats,
+    setCurrentChatId,
+    setLoading,
+    setError,
+    createNewChat,
+    addNewMessage,
+} = chatSlice.actions;
+
+export default chatSlice.reducer;
