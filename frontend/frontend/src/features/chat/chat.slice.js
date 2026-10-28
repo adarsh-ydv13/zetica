@@ -26,8 +26,6 @@ const chatSlice = createSlice({
 
         addNewMessage: (state, action) => {
             const { chatId, content, role } = action.payload;
-
-            // Chat exist nahi karta toh message add nahi kar sakte.
             if (!state.chats[chatId]) {
                 return;
             }
@@ -41,7 +39,12 @@ const chatSlice = createSlice({
             state.chats[chatId].lastUpdated = new Date().toISOString();
         },
 
-        setChats: (state, action) => {
+        addMessages:(state,action)=>{
+        const {chatId,messages}=action.payload
+        state.chats[chatId].messages.push(...messages)
+        },
+
+        setChats:(state, action) => {
             state.chats = action.payload;
         },
 
@@ -66,6 +69,7 @@ export const {
     setError,
     createNewChat,
     addNewMessage,
+    addMessages
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

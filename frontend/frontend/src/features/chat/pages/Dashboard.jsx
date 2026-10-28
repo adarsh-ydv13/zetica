@@ -13,7 +13,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     chat.initializeSocketConnection()
-    // chat.handleGetChats()
+    chat.handleGetChats()
   }, [])
 
   const handleSubmitMessage = (event) => {
