@@ -10,7 +10,7 @@ export const useChat=()=>{
 
    const dispatch=useDispatch()
 
- async function handleSendMessage({ message, chatId }) {
+async function handleSendMessage({ message, chatId }) {
     dispatch(setLoading(true));
     dispatch(setError(null));
 
@@ -21,32 +21,54 @@ export const useChat=()=>{
 
         const { chat, aiMessage } = data;
 
-        if (!chat || !aiMessage) {
-            throw new Error("Chat or AI message is missing from API response");
+        if (!aiMessage) {
+            throw new Error("AI message is missing");
         }
 
-        dispatch(createNewChat({
-            chatId: chat._id,
-            title: chat.title
-        }));
+        // Existing chat ki ID use karo, warna new chat ki ID
+        const activeChatId = chatId || chat?._id;
 
+        if (!activeChatId) {
+            throw new Error("Chat ID is missing");
+        }
+
+        // Sirf new chat create karo
+        if (!chatId) {
+            if (!chat) {
+                throw new Error("Chat data is missing");
+            }
+
+            dispatch(createNewChat({
+                chatId: chat._id,
+                title: chat.title
+            }));
+        }
+
+        // User message add karo
         dispatch(addNewMessage({
-            chatId: chat._id,
+            chatId: activeChatId,
             content: message,
             role: "user"
         }));
 
+        // AI response add karo
         dispatch(addNewMessage({
-            chatId: chat._id,
+            chatId: activeChatId,
             content: aiMessage.content,
             role: aiMessage.role
         }));
 
-        dispatch(setCurrentChatId(chat._id));
+        dispatch(setCurrentChatId(activeChatId));
 
     } catch (error) {
-        console.error("handleSendMessage error:", error);
-        dispatch(setError(error.message || "Failed to send message"));
+        console.error(
+            "handleSendMessage error:",
+            error.response?.data || error.message
+        );
+
+        dispatch(setError(
+            error.response?.data?.message || error.message
+        ));
     } finally {
         dispatch(setLoading(false));
     }
@@ -54,35 +76,43 @@ export const useChat=()=>{
 
 async function handleGetChats(){
    dispatch(setLoading(true))
-   const data=await getChats()
-   const {chats}=data
-   dispatch(setChats(chats.reduce((acc,chat)=>{
-      acc[chat._id]={
-         id:chat._id,
-         title:chat.title,
-         messages:[],
-         lastUpdated:chat.updatedAt,
-      }
-      return acc
-   },{})))
+  const data = await getChats();
+        const { chats } = data;
+
+        const formattedChats = chats.reduce((acc, chat) => {
+            acc[chat._id] = {
+                id: chat._id,
+                title: chat.title,
+                messages: [],
+                lastUpdated: chat.updatedAt,
+            };
+
+            return acc;
+        }, {});
+
+        dispatch(setChats(formattedChats));
    dispatch(setLoading(false))
 }
 
-async function handleOpenChat(chatId) {
+async function handleOpenChat(chatId, chats) {
+    console.log(chats[chatId]?.messages.length);
 
-   const data=await getMessages({chatId})
-   const {messages}=data
+    if (chats[chatId]?.messages.length === 0) {
+        const data = await getMessages({chatId});
+        const { messages } = data;
 
-   const formattedMessages=messages.map(msg=>({
-      content:msg.content,
-      role:msg.role,
-   }))
-   dispatch(addMessages({
-      chatId,
-      messages:formattedMessages
-   }))
-   dispatch(setCurrentChatId(chatId))
-   
+        const formattedMessages = messages.map(msg => ({
+            content: msg.content,
+            role: msg.role,
+        }));
+
+        dispatch(addMessages({
+            chatId,
+            messages: formattedMessages,
+        }));
+    }
+
+    dispatch(setCurrentChatId(chatId));
 }
 
     return{

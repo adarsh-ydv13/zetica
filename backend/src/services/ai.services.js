@@ -1,10 +1,12 @@
 import "dotenv/config";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import {ChatMistralAI}  from "@langchain/mistralai"
-import {HumanMessage,SystemMessage,AIMessage} from "langchain"
+import {HumanMessage,SystemMessage,AIMessage,createAgent,tool } from "langchain"
+import * as z from "zod"
+import { searchInternet } from "./internet.services.js";
 
 const geminiModel = new ChatGoogleGenerativeAI({
-  model: "gemini-3.6-flash",
+  model: "gemini-flash-latest",
   apiKey: process.env.GEMINI_API_KEY,
 });
 
@@ -15,19 +17,53 @@ const mistralModel=new ChatMistralAI({
   apiKey:process.env.MISTRAL_API_KEY
 })
 
+
+const searchInternetTool=tool(
+  searchInternet,
+  {
+    name:"searchInternet",
+    description:"use this tool to get latest information from the internet",
+    schema:z.object({
+      query:z.string().describe("the search query to look up on the internet")
+    })
+  }
+)
+
+
+const agent=createAgent({
+  model:mistralModel,
+  tools:[searchInternetTool],
+})
+
 export async function generateResponse(messages) {
-  const response=await geminiModel.invoke(messages.map(msg=>{
+  console.log("Gemini agent calling...");
+
+let response;
+
+try {
+    response = await agent.invoke({
+   messages:[
+    new SystemMessage(`You are a helpful and precise assistance for answering questions.
+      If you dont lnow the answer , say you dont know,
+      if the question requires up to date information  , USE THE "searchInternet" tool to get the latest 
+      information from the internet and then answer based on search results`),
+     ...messages.map(msg=>{
     if(msg.role=="user"){
       return new HumanMessage(msg.content)
     }
     else if(msg.role=="ai"){
       return new AIMessage(msg.content)
     }
-  }))
+  })]
+})
+} catch (error) {
+    console.error("AGENT ERROR:", error);
+    throw error;
+}
 
+console.log("Gemini response received");
 
-
-  return (await response).text
+  return  response.messages[response.messages.length-1].text
 }
 
 
