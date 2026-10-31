@@ -4,7 +4,7 @@ let io;
 
 export function initSocket(httpServer) {
     const allowedOrigins = [
-        "http://localhost:5173",
+        "https://zetica.netlify.app",
         process.env.FRONTEND_URL
     ].filter(Boolean);
 

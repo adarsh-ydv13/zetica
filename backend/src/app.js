@@ -7,24 +7,27 @@ import chatRouter from "./router/chat.router.js";
 
 const app = express();
 
-const allowedOrigins = [
-    "http://localhost:5173",
-    process.env.FRONTEND_URL
-].filter(Boolean);
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-app.use(cors({
-    origin: allowedOrigins,
+app.use(
+  cors({
+    origin: [
+      "https://zetica.netlify.app",
+      "http://localhost:5173",
+    ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"]
-}));
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  })
+);
 
 app.get("/", (req, res) => {
-    res.json({ message: "Nexora AI server is running" });
+  res.json({
+    message: "Nexora AI Backend is running",
+    success: true,
+  });
 });
 
 app.use("/api/auth", authRouter);
